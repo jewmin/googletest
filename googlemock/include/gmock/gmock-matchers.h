@@ -65,11 +65,17 @@
 #define GMOCK_MAYBE_5046_
 #endif
 
+#if _MSC_VER >= 1900
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(
     4251 GMOCK_MAYBE_5046_ /* class A needs to have dll-interface to be used by
                               clients of class B */
     /* Symbol involving type with internal linkage not defined */)
-
+#else //Pragma 5046 doesn't exist in version of MSC prior to 1900
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(
+    4251 /* class A needs to have dll-interface to be used by clients of
+                 class B */
+    /* Symbol involving type with internal linkage not defined */)
+#endif
 namespace testing {
 
 // To implement a matcher Foo for type T, define:
@@ -2261,7 +2267,7 @@ class PointwiseMatcher {
   operator Matcher<LhsContainer>() const {
     GTEST_COMPILE_ASSERT_(
         !IsHashTable<GTEST_REMOVE_REFERENCE_AND_CONST_(LhsContainer)>::value,
-        use_UnorderedPointwise_with_hash_tables);
+        use_UnorderedPointwise_with_hash_tables_);
 
     return Matcher<LhsContainer>(
         new Impl<const LhsContainer&>(tuple_matcher_, rhs_));
