@@ -49,7 +49,7 @@ Using Google Mock is easy! Inside your C++ source file, just `#include` `"gtest/
 # A Case for Mock Turtles #
 Let's look at an example. Suppose you are developing a graphics program that relies on a LOGO-like API for drawing. How would you test that it does the right thing? Well, you can run it and compare the screen with a golden screen snapshot, but let's admit it: tests like this are expensive to run and fragile (What if you just upgraded to a shiny new graphics card that has better anti-aliasing? Suddenly you have to update all your golden images.). It would be too painful if all your tests are like this. Fortunately, you learned about Dependency Injection and know the right thing to do: instead of having your application talk to the drawing API directly, wrap the API in an interface (say, `Turtle`) and code to that interface:
 
-```
+```cpp
 class Turtle {
   ...
   virtual ~Turtle() {}
@@ -76,14 +76,14 @@ If you are lucky, the mocks you need to use have already been implemented by som
 Using the `Turtle` interface as example, here are the simple steps you need to follow:
 
   1. Derive a class `MockTurtle` from `Turtle`.
-  1. Take a _virtual_ function of `Turtle` (while it's possible to [mock non-virtual methods using templates](CookBook.md#mocking-nonvirtual-methods), it's much more involved). Count how many arguments it has.
+  1. Take a _virtual_ function of `Turtle` (while it's possible to [mock non-virtual methods using templates](cook_book.md#mocking-nonvirtual-methods), it's much more involved). Count how many arguments it has.
   1. In the `public:` section of the child class, write `MOCK_METHODn();` (or `MOCK_CONST_METHODn();` if you are mocking a `const` method), where `n` is the number of the arguments; if you counted wrong, shame on you, and a compiler error will tell you so.
   1. Now comes the fun part: you take the function signature, cut-and-paste the _function name_ as the _first_ argument to the macro, and leave what's left as the _second_ argument (in case you're curious, this is the _type of the function_).
   1. Repeat until all virtual functions you want to mock are done.
 
 After the process, you should have something like:
 
-```
+```cpp
 #include "gmock/gmock.h"  // Brings in Google Mock.
 class MockTurtle : public Turtle {
  public:
@@ -125,7 +125,7 @@ Once you have a mock class, using it is easy. The typical work flow is:
 
 Here's an example:
 
-```
+```cpp
 #include "path/to/mock-turtle.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -170,8 +170,8 @@ Admittedly, this test is contrived and doesn't do much. You can easily achieve t
 
 ## Using Google Mock with Any Testing Framework ##
 If you want to use something other than Google Test (e.g. [CppUnit](http://sourceforge.net/projects/cppunit/) or
-[CxxTest](http://cxxtest.tigris.org/)) as your testing framework, just change the `main()` function in the previous section to:
-```
+[CxxTest](https://cxxtest.com/)) as your testing framework, just change the `main()` function in the previous section to:
+```cpp
 int main(int argc, char** argv) {
   // The following line causes Google Mock to throw an exception on failure,
   // which will be interpreted by your testing framework as a test failure.
@@ -187,7 +187,7 @@ sometimes causes the test program to crash.  You'll still be able to
 notice that the test has failed, but it's not a graceful failure.
 
 A better solution is to use Google Test's
-[event listener API](../../googletest/docs/advanced.md#extending-google-test-by-handling-test-events)
+[event listener API](../../googletest/docs/advanced.md#extending-googletest-by-handling-test-events)
 to report a test failure to your testing framework properly.  You'll need to
 implement the `OnTestPartResult()` method of the event listener interface, but it
 should be straightforward.
@@ -203,7 +203,7 @@ The key to using a mock object successfully is to set the _right expectations_ o
 ## General Syntax ##
 In Google Mock we use the `EXPECT_CALL()` macro to set an expectation on a mock method. The general syntax is:
 
-```
+```cpp
 EXPECT_CALL(mock_object, method(matchers))
     .Times(cardinality)
     .WillOnce(action)
@@ -216,7 +216,7 @@ The macro can be followed by some optional _clauses_ that provide more informati
 
 This syntax is designed to make an expectation read like English. For example, you can probably guess that
 
-```
+```cpp
 using ::testing::Return;
 ...
 EXPECT_CALL(turtle, GetX())
@@ -233,14 +233,14 @@ says that the `turtle` object's `GetX()` method will be called five times, it wi
 ## Matchers: What Arguments Do We Expect? ##
 When a mock function takes arguments, we must specify what arguments we are expecting; for example:
 
-```
+```cpp
 // Expects the turtle to move forward by 100 units.
 EXPECT_CALL(turtle, Forward(100));
 ```
 
 Sometimes you may not want to be too specific (Remember that talk about tests being too rigid? Over specification leads to brittle tests and obscures the intent of tests. Therefore we encourage you to specify only what's necessary - no more, no less.). If you care to check that `Forward()` will be called but aren't interested in its actual argument, write `_` as the argument, which means "anything goes":
 
-```
+```cpp
 using ::testing::_;
 ...
 // Expects the turtle to move forward.
@@ -251,7 +251,7 @@ EXPECT_CALL(turtle, Forward(_));
 
 A list of built-in matchers can be found in the [CheatSheet](CheatSheet.md). For example, here's the `Ge` (greater than or equal) matcher:
 
-```
+```cpp
 using ::testing::Ge;
 ...
 EXPECT_CALL(turtle, Forward(Ge(100)));
@@ -281,7 +281,7 @@ First, if the return type of a mock function is a built-in type or a pointer, th
 
 Second, if a mock function doesn't have a default action, or the default action doesn't suit you, you can specify the action to be taken each time the expectation matches using a series of `WillOnce()` clauses followed by an optional `WillRepeatedly()`. For example,
 
-```
+```cpp
 using ::testing::Return;
 ...
 EXPECT_CALL(turtle, GetX())
@@ -292,7 +292,7 @@ EXPECT_CALL(turtle, GetX())
 
 This says that `turtle.GetX()` will be called _exactly three times_ (Google Mock inferred this from how many `WillOnce()` clauses we've written, since we didn't explicitly write `Times()`), and will return 100, 200, and 300 respectively.
 
-```
+```cpp
 using ::testing::Return;
 ...
 EXPECT_CALL(turtle, GetY())
@@ -309,18 +309,18 @@ What can we do inside `WillOnce()` besides `Return()`? You can return a referenc
 
 **Important note:** The `EXPECT_CALL()` statement evaluates the action clause only once, even though the action may be performed many times. Therefore you must be careful about side effects. The following may not do what you want:
 
-```
+```cpp
 int n = 100;
 EXPECT_CALL(turtle, GetX())
 .Times(4)
 .WillRepeatedly(Return(n++));
 ```
 
-Instead of returning 100, 101, 102, ..., consecutively, this mock function will always return 100 as `n++` is only evaluated once. Similarly, `Return(new Foo)` will create a new `Foo` object when the `EXPECT_CALL()` is executed, and will return the same pointer every time. If you want the side effect to happen every time, you need to define a custom action, which we'll teach in the [CookBook](CookBook.md).
+Instead of returning 100, 101, 102, ..., consecutively, this mock function will always return 100 as `n++` is only evaluated once. Similarly, `Return(new Foo)` will create a new `Foo` object when the `EXPECT_CALL()` is executed, and will return the same pointer every time. If you want the side effect to happen every time, you need to define a custom action, which we'll teach in the [CookBook](cook_book.md).
 
 Time for another quiz! What do you think the following means?
 
-```
+```cpp
 using ::testing::Return;
 ...
 EXPECT_CALL(turtle, GetY())
@@ -335,7 +335,7 @@ So far we've only shown examples where you have a single expectation. More reali
 
 By default, when a mock method is invoked, Google Mock will search the expectations in the **reverse order** they are defined, and stop when an active expectation that matches the arguments is found (you can think of it as "newer rules override older ones."). If the matching expectation cannot take any more calls, you will get an upper-bound-violated failure. Here's an example:
 
-```
+```cpp
 using ::testing::_;
 ...
 EXPECT_CALL(turtle, Forward(_));  // #1
@@ -352,7 +352,7 @@ By default, an expectation can match a call even though an earlier expectation h
 
 Sometimes, you may want all the expected calls to occur in a strict order. To say this in Google Mock is easy:
 
-```
+```cpp
 using ::testing::InSequence;
 ...
 TEST(FooTest, DrawsLineSegment) {
@@ -372,14 +372,14 @@ By creating an object of type `InSequence`, all expectations in its scope are pu
 
 In this example, we test that `Foo()` calls the three expected functions in the order as written. If a call is made out-of-order, it will be an error.
 
-(What if you care about the relative order of some of the calls, but not all of them? Can you specify an arbitrary partial order? The answer is ... yes! If you are impatient, the details can be found in the [CookBook](CookBook.md#expecting-partially-ordered-calls).)
+(What if you care about the relative order of some of the calls, but not all of them? Can you specify an arbitrary partial order? The answer is ... yes! If you are impatient, the details can be found in the [CookBook](cook_book.md#expecting-partially-ordered-calls).)
 
 ## All Expectations Are Sticky (Unless Said Otherwise) ##
 Now let's do a quick quiz to see how well you can use this mock stuff already. How would you test that the turtle is asked to go to the origin _exactly twice_ (you want to ignore any other instructions it receives)?
 
 After you've come up with your answer, take a look at ours and compare notes (solve it yourself first - don't cheat!):
 
-```
+```cpp
 using ::testing::_;
 ...
 EXPECT_CALL(turtle, GoTo(_, _))  // #1
@@ -394,7 +394,7 @@ This example shows that **expectations in Google Mock are "sticky" by default**,
 
 Simple? Let's see if you've really understood it: what does the following code say?
 
-```
+```cpp
 using ::testing::Return;
 ...
 for (int i = n; i > 0; i--) {
@@ -407,7 +407,7 @@ If you think it says that `turtle.GetX()` will be called `n` times and will retu
 
 One correct way of saying that `turtle.GetX()` will return 10, 20, 30, ..., is to explicitly say that the expectations are _not_ sticky. In other words, they should _retire_ as soon as they are saturated:
 
-```
+```cpp
 using ::testing::Return;
 ...
 for (int i = n; i > 0; i--) {
@@ -419,7 +419,7 @@ for (int i = n; i > 0; i--) {
 
 And, there's a better way to do it: in this case, we expect the calls to occur in a specific order, and we line up the actions to match the order. Since the order is important here, we should make it explicit using a sequence:
 
-```
+```cpp
 using ::testing::InSequence;
 using ::testing::Return;
 ...
@@ -444,4 +444,4 @@ In Google Mock, if you are not interested in a method, just don't say anything a
 # What Now? #
 Congratulations! You've learned enough about Google Mock to start using it. Now, you might want to join the [googlemock](http://groups.google.com/group/googlemock) discussion group and actually write some tests using Google Mock - it will be fun. Hey, it may even be addictive - you've been warned.
 
-Then, if you feel like increasing your mock quotient, you should move on to the [CookBook](CookBook.md). You can learn many advanced features of Google Mock there -- and advance your level of enjoyment and testing bliss.
+Then, if you feel like increasing your mock quotient, you should move on to the [CookBook](cook_book.md). You can learn many advanced features of Google Mock there -- and advance your level of enjoyment and testing bliss.

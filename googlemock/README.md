@@ -35,7 +35,7 @@ We hope you find it useful!
   * Does automatic verification of expectations (no record-and-replay needed).
   * Allows arbitrary (partial) ordering constraints on
     function calls to be expressed,.
-  * Lets an user extend it by defining new matchers and actions.
+  * Lets a user extend it by defining new matchers and actions.
   * Does not use exceptions.
   * Is easy to learn and use.
 
@@ -53,18 +53,18 @@ the Apache License, which is different from Google Mock's license.
 If you are new to the project, we suggest that you read the user
 documentation in the following order:
 
-  * Learn the [basics](../../master/googletest/docs/primer.md) of
+  * Learn the [basics](../googletest/docs/primer.md) of
     Google Test, if you choose to use Google Mock with it (recommended).
-  * Read [Google Mock for Dummies](../../master/googlemock/docs/ForDummies.md).
+  * Read [Google Mock for Dummies](../googlemock/docs/ForDummies.md).
   * Read the instructions below on how to build Google Mock.
 
 You can also watch Zhanyong's [talk](http://www.youtube.com/watch?v=sYpCyLI47rM) on Google Mock's usage and implementation.
 
 Once you understand the basics, check out the rest of the docs:
 
-  * [CheatSheet](../../master/googlemock/docs/CheatSheet.md) - all the commonly used stuff
+  * [CheatSheet](../googlemock/docs/CheatSheet.md) - all the commonly used stuff
     at a glance.
-  * [CookBook](../../master/googlemock/docs/CookBook.md) - recipes for getting things done,
+  * [CookBook](../googlemock/docs/cook_book.md) - recipes for getting things done,
     including advanced techniques.
 
 If you need help, please check the
@@ -79,7 +79,7 @@ posting a question on the
 Google Mock is not a testing framework itself.  Instead, it needs a
 testing framework for writing tests.  Google Mock works seamlessly
 with [Google Test](https://github.com/google/googletest), but
-you can also use it with [any C++ testing framework](../../master/googlemock/docs/ForDummies.md#using-google-mock-with-any-testing-framework).
+you can also use it with [any C++ testing framework](../googlemock/docs/ForDummies.md#using-google-mock-with-any-testing-framework).
 
 ### Requirements for End Users ###
 
@@ -90,7 +90,7 @@ You must use the bundled version of Google Test when using Google Mock.
 You can also easily configure Google Mock to work with another testing
 framework, although it will still need Google Test.  Please read
 ["Using_Google_Mock_with_Any_Testing_Framework"](
-    ../../master/googlemock/docs/ForDummies.md#using-google-mock-with-any-testing-framework)
+    ../googlemock/docs/ForDummies.md#using-google-mock-with-any-testing-framework)
 for instructions.
 
 Google Mock depends on advanced C++ features and thus requires a more
@@ -144,115 +144,7 @@ to
     target_link_libraries(example gmock_main)
 
 This works because `gmock_main` library is compiled with Google Test.
-However, it does not automatically add Google Test includes.
-Therefore you will also have to change
 
-    if (CMAKE_VERSION VERSION_LESS 2.8.11)
-      include_directories("${gtest_SOURCE_DIR}/include")
-    endif()
-
-to
-
-    if (CMAKE_VERSION VERSION_LESS 2.8.11)
-      include_directories(BEFORE SYSTEM
-        "${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
-    else()
-      target_include_directories(gmock_main SYSTEM BEFORE INTERFACE
-        "${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
-    endif()
-
-This will addtionally mark Google Mock includes as system, which will
-silence compiler warnings when compiling your tests using clang with
-`-Wpedantic -Wall -Wextra -Wconversion`.
-
-
-#### Preparing to Build (Unix only) ####
-
-If you are using a Unix system and plan to use the GNU Autotools build
-system to build Google Mock (described below), you'll need to
-configure it now.
-
-To prepare the Autotools build system:
-
-    cd googlemock
-    autoreconf -fvi
-
-To build Google Mock and your tests that use it, you need to tell your
-build system where to find its headers and source files.  The exact
-way to do it depends on which build system you use, and is usually
-straightforward.
-
-This section shows how you can integrate Google Mock into your
-existing build system.
-
-Suppose you put Google Mock in directory `${GMOCK_DIR}` and Google Test
-in `${GTEST_DIR}` (the latter is `${GMOCK_DIR}/gtest` by default).  To
-build Google Mock, create a library build target (or a project as
-called by Visual Studio and Xcode) to compile
-
-    ${GTEST_DIR}/src/gtest-all.cc and ${GMOCK_DIR}/src/gmock-all.cc
-
-with
-
-    ${GTEST_DIR}/include and ${GMOCK_DIR}/include
-
-in the system header search path, and
-
-    ${GTEST_DIR} and ${GMOCK_DIR}
-
-in the normal header search path.  Assuming a Linux-like system and gcc,
-something like the following will do:
-
-    g++ -isystem ${GTEST_DIR}/include -I${GTEST_DIR} \
-        -isystem ${GMOCK_DIR}/include -I${GMOCK_DIR} \
-        -pthread -c ${GTEST_DIR}/src/gtest-all.cc
-    g++ -isystem ${GTEST_DIR}/include -I${GTEST_DIR} \
-        -isystem ${GMOCK_DIR}/include -I${GMOCK_DIR} \
-        -pthread -c ${GMOCK_DIR}/src/gmock-all.cc
-    ar -rv libgmock.a gtest-all.o gmock-all.o
-
-(We need -pthread as Google Test and Google Mock use threads.)
-
-Next, you should compile your test source file with
-${GTEST\_DIR}/include and ${GMOCK\_DIR}/include in the header search
-path, and link it with gmock and any other necessary libraries:
-
-    g++ -isystem ${GTEST_DIR}/include -isystem ${GMOCK_DIR}/include \
-        -pthread path/to/your_test.cc libgmock.a -o your_test
-
-As an example, the make/ directory contains a Makefile that you can
-use to build Google Mock on systems where GNU make is available
-(e.g. Linux, Mac OS X, and Cygwin).  It doesn't try to build Google
-Mock's own tests.  Instead, it just builds the Google Mock library and
-a sample test.  You can use it as a starting point for your own build
-script.
-
-If the default settings are correct for your environment, the
-following commands should succeed:
-
-    cd ${GMOCK_DIR}/make
-    make
-    ./gmock_test
-
-If you see errors, try to tweak the contents of
-[make/Makefile](make/Makefile) to make them go away.
-
-### Windows ###
-
-The msvc/2005 directory contains VC++ 2005 projects and the msvc/2010
-directory contains VC++ 2010 projects for building Google Mock and
-selected tests.
-
-Change to the appropriate directory and run "msbuild gmock.sln" to
-build the library and tests (or open the gmock.sln in the MSVC IDE).
-If you want to create your own project to use with Google Mock, you'll
-have to configure it to use the `gmock_config` propety sheet.  For that:
-
- * Open the Property Manager window (View | Other Windows | Property Manager)
- * Right-click on your project and select "Add Existing Property Sheet..."
- * Navigate to `gmock_config.vsprops` or `gmock_config.props` and select it.
- * In Project Properties | Configuration Properties | General | Additional
-   Include Directories, type <path to Google Mock>/include.
 
 ### Tweaking Google Mock ###
 
@@ -266,35 +158,6 @@ or 0 to enable or disable a certain feature.
 We list the most frequently used macros below.  For a complete list,
 see file [${GTEST\_DIR}/include/gtest/internal/gtest-port.h](
 ../googletest/include/gtest/internal/gtest-port.h).
-
-### Choosing a TR1 Tuple Library ###
-
-Google Mock uses the C++ Technical Report 1 (TR1) tuple library
-heavily.  Unfortunately TR1 tuple is not yet widely available with all
-compilers.  The good news is that Google Test 1.4.0+ implements a
-subset of TR1 tuple that's enough for Google Mock's need.  Google Mock
-will automatically use that implementation when the compiler doesn't
-provide TR1 tuple.
-
-Usually you don't need to care about which tuple library Google Test
-and Google Mock use.  However, if your project already uses TR1 tuple,
-you need to tell Google Test and Google Mock to use the same TR1 tuple
-library the rest of your project uses, or the two tuple
-implementations will clash.  To do that, add
-
-    -DGTEST_USE_OWN_TR1_TUPLE=0
-
-to the compiler flags while compiling Google Test, Google Mock, and
-your tests.  If you want to force Google Test and Google Mock to use
-their own tuple library, just add
-
-    -DGTEST_USE_OWN_TR1_TUPLE=1
-
-to the compiler flags instead.
-
-If you want to use Boost's TR1 tuple library with Google Mock, please
-refer to the Boost website (http://www.boost.org/) for how to obtain
-it and set it up.
 
 ### As a Shared Library (DLL) ###
 
@@ -320,21 +183,20 @@ do if you are upgrading from an earlier version of Google Mock.
 
 You may need to explicitly enable or disable Google Test's own TR1
 tuple library.  See the instructions in section "[Choosing a TR1 Tuple
-Library](../googletest/#choosing-a-tr1-tuple-library)".
+Library](#choosing-a-tr1-tuple-library)".
 
 #### Upgrading from 1.4.0 or Earlier ####
 
 On platforms where the pthread library is available, Google Test and
 Google Mock use it in order to be thread-safe.  For this to work, you
 may need to tweak your compiler and/or linker flags.  Please see the
-"[Multi-threaded Tests](../googletest#multi-threaded-tests
-)" section in file Google Test's README for what you may need to do.
+"[Multi-threaded Tests](../googletest/README.md#multi-threaded-tests)" section in file Google Test's README for what you may need to do.
 
 If you have custom matchers defined using `MatcherInterface` or
 `MakePolymorphicMatcher()`, you'll need to update their definitions to
 use the new matcher API (
-[monomorphic](./docs/CookBook.md#writing-new-monomorphic-matchers),
-[polymorphic](./docs/CookBook.md#writing-new-polymorphic-matchers)).
+[monomorphic](./docs/cook_book.md#writing-new-monomorphic-matchers),
+[polymorphic](./docs/cook_book.md#writing-new-polymorphic-matchers)).
 Matchers defined using `MATCHER()` or `MATCHER_P*()` aren't affected.
 
 Happy testing!
